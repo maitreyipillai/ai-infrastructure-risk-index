@@ -1,127 +1,171 @@
+import textwrap
 import folium
-from folium.plugins import FastMarkerCluster
+from folium.plugins import FastMarkerCluster, HeatMap
 import pandas as pd
 import streamlit as st
-from streamlit_folium import st_folium
+import streamlit.components.v1 as components
 
-# Page configuration
 st.set_page_config(
-    page_title="Global AI Infrastructure Geopolitical Risk Index",
+    page_title="Global AI Infrastructure Geopolitical & Ecological Risk Index",
     page_icon="🌐",
     layout="wide",
-    initial_sidebar_state="expanded",
+    initial_sidebar_state="collapsed",
 )
 
-# ----------------- EDITORIAL OLIVE & WARM BEIGE STYLING -----------------
+# ----------------- EDITORIAL NAVY BLUE & ALABASTER STYLING -----------------
 st.markdown(
     """
 <style>
-    /* Global Canvas & Base Typography */
+    /* Main Background & Base Typography */
     html, body, [class*="css"], .stApp {
-        background-color: #1c241a !important;
-        color: #dfd7c2 !important;
+        background-color: #0b1320 !important;
+        color: #d1dced !important;
         font-family: 'Cambria', 'Georgia', 'Times New Roman', serif !important;
     }
-
-    /* Headings */
+    
+    /* Typography Hierarchy */
     h1, h2, h3, h4, h5, h6, .stTitle {
         font-family: 'Cambria', 'Georgia', serif !important;
-        color: #f5f0e1 !important;
-        letter-spacing: -0.01em !important;
+        color: #f0f4f8 !important;
+        letter-spacing: -0.015em !important;
         font-weight: 700 !important;
     }
-    
     h1 {
-        color: #f5f0e1 !important;
-        border-bottom: 1px solid rgba(226, 218, 196, 0.2);
-        padding-bottom: 8px;
+        border-bottom: 1px solid rgba(190, 206, 230, 0.2);
+        padding-bottom: 10px;
+        margin-bottom: 6px;
     }
-
     p, span, label, div {
-        color: #dfd7c2;
+        color: #d1dced;
         font-family: 'Cambria', 'Georgia', serif;
     }
 
-    /* Sidebar Styling */
-    section[data-testid="stSidebar"] {
-        background-color: #151b13 !important;
-        border-right: 1px solid rgba(226, 218, 196, 0.15) !important;
-    }
-    section[data-testid="stSidebar"] * {
-        color: #dfd7c2 !important;
-        font-family: 'Cambria', 'Georgia', serif !important;
+    /* Top Filter Container Panel */
+    .filter-panel {
+        background: #111c2e;
+        border: 1px solid rgba(190, 206, 230, 0.16);
+        border-radius: 8px;
+        padding: 16px 20px 8px 20px;
+        margin-bottom: 20px;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
     }
 
-    /* Metric Tiles */
+    /* Modern Metric Cards */
     .metric-card {
-        background: #242e22;
-        border: 1px solid rgba(226, 218, 196, 0.22);
+        background: #132035;
+        border: 1px solid rgba(190, 206, 230, 0.18);
+        border-top: 3px solid #3b82f6;
         border-radius: 6px;
-        padding: 18px 14px;
+        padding: 16px 12px;
         text-align: center;
-        box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
     }
     .metric-value {
         font-family: 'Cambria', 'Georgia', serif;
-        font-size: 2.2rem;
+        font-size: 2.1rem;
         font-weight: 700;
-        color: #f5f0e1;
+        color: #ffffff;
         line-height: 1.1;
     }
     .metric-label {
         font-family: 'Cambria', 'Georgia', serif;
-        font-size: 0.82rem;
+        font-size: 0.78rem;
         font-weight: 600;
-        color: #eedcb3;
+        color: #94a9c9;
         text-transform: uppercase;
-        letter-spacing: 0.08em;
+        letter-spacing: 0.09em;
         margin-top: 6px;
     }
 
-    /* Tabs Styling */
+    /* Tab Navigation */
     .stTabs [data-baseweb="tab-list"] {
-        gap: 28px;
-        border-bottom: 1px solid rgba(226, 218, 196, 0.2);
-        padding-bottom: 4px;
+        gap: 24px;
+        border-bottom: 1px solid rgba(190, 206, 230, 0.18);
+        padding-bottom: 6px;
     }
     .stTabs [data-baseweb="tab"] {
         font-family: 'Cambria', 'Georgia', serif !important;
-        font-size: 1.05rem !important;
+        font-size: 1.02rem !important;
         font-weight: 600 !important;
-        color: #a8a08b !important;
+        color: #7b8fae !important;
         padding: 8px 6px !important;
         border: none !important;
         background: transparent !important;
     }
     .stTabs [aria-selected="true"] {
-        color: #f5f0e1 !important;
-        border-bottom: 2px solid #eedcb3 !important;
+        color: #f0f4f8 !important;
+        border-bottom: 2px solid #60a5fa !important;
     }
 
-    /* Callouts & Content Boxes */
+    /* Dossier Card & Content Boxes */
     .theory-box {
-        background-color: #242e22;
-        border: 1px solid rgba(226, 218, 196, 0.25);
-        border-left: 4px solid #eedcb3;
+        background-color: #132035;
+        border: 1px solid rgba(190, 206, 230, 0.18);
+        border-left: 4px solid #60a5fa;
         border-radius: 4px;
-        padding: 18px 22px;
-        margin-bottom: 18px;
+        padding: 20px 24px;
+        margin-bottom: 20px;
     }
     .research-card {
-        background: #242e22;
-        border: 1px solid rgba(226, 218, 196, 0.2);
+        background: #132035;
+        border: 1px solid rgba(190, 206, 230, 0.15);
         border-radius: 6px;
-        padding: 20px;
+        padding: 22px;
         height: 100%;
     }
     .research-card h4 {
-        color: #f5f0e1 !important;
-        margin-bottom: 6px;
+        color: #f0f4f8 !important;
+        margin-bottom: 8px;
     }
 
-    /* Streamlit native widget text overrides */
+    /* Selectbox & Dropdown Popover (Deep Navy on White) */
+    div[data-baseweb="select"] {
+        background-color: #ffffff !important;
+        border-radius: 6px !important;
+    }
+    div[data-baseweb="select"] * {
+        color: #0b1320 !important;
+        font-family: 'Cambria', 'Georgia', serif !important;
+        font-weight: 600 !important;
+    }
+    div[data-baseweb="popover"],
+    div[data-baseweb="menu"],
+    ul[role="listbox"],
+    ul[data-testid="stSelectboxVirtualDropdown"] {
+        background-color: #ffffff !important;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4) !important;
+    }
+    ul[role="listbox"] li,
+    ul[role="listbox"] li div,
+    ul[role="listbox"] li span,
+    ul[role="listbox"] div[role="option"],
+    ul[role="listbox"] div[role="option"] span,
+    ul[data-testid="stSelectboxVirtualDropdown"] li,
+    ul[data-testid="stSelectboxVirtualDropdown"] span,
+    div[role="option"],
+    div[role="option"] * {
+        color: #0b1320 !important;
+        font-family: 'Cambria', 'Georgia', serif !important;
+        font-size: 0.95rem !important;
+        font-weight: 600 !important;
+        background-color: #ffffff !important;
+        opacity: 1 !important;
+        -webkit-text-fill-color: #0b1320 !important;
+    }
+    ul[role="listbox"] li:hover,
+    ul[role="listbox"] li:hover *,
+    div[role="option"]:hover,
+    div[role="option"]:hover *,
+    li[aria-selected="true"],
+    li[aria-selected="true"] * {
+        background-color: #e2ebf5 !important;
+        color: #08101d !important;
+        font-weight: 700 !important;
+        -webkit-text-fill-color: #08101d !important;
+    }
     .stSelectbox label, .stSlider label {
-        color: #f5f0e1 !important;
+        color: #f0f4f8 !important;
+        font-family: 'Cambria', 'Georgia', serif !important;
         font-weight: 600 !important;
     }
 </style>
@@ -130,7 +174,6 @@ st.markdown(
 )
 
 
-# ----------------- DATA INGESTION -----------------
 @st.cache_data
 def load_data():
     master_df = pd.read_csv("master_ai_infrastructure_risk_index.csv")
@@ -146,22 +189,27 @@ except Exception as e:
     st.error(f"Error loading CSV datasets: {e}")
     st.stop()
 
-# ----------------- HEADER -----------------
-st.title("Global AI Infrastructure Geopolitical Risk Index")
+# ----------------- HERO HEADER -----------------
+st.title("Global AI Infrastructure Geopolitical & Ecological Risk Index")
 st.markdown(
     """
-<p style="font-size: 1.12rem; color: #eedcb3; max-width: 920px; margin-top: 4px; line-height: 1.5;">
-An empirical intelligence framework mapping physical subsea connectivity and hyperscale compute concentration 
-against sovereign institutional fragility, state surveillance capacity, and judicial vulnerability.
+<div style="display: flex; gap: 10px; margin-bottom: 12px; flex-wrap: wrap;">
+    <span style="background: rgba(59, 130, 246, 0.15); border: 1px solid rgba(59, 130, 246, 0.4); color: #93c5fd; padding: 3px 10px; border-radius: 12px; font-size: 0.8rem; font-weight: 600;">158 Sovereign States</span>
+    <span style="background: rgba(59, 130, 246, 0.15); border: 1px solid rgba(59, 130, 246, 0.4); color: #93c5fd; padding: 3px 10px; border-radius: 12px; font-size: 0.8rem; font-weight: 600;">V-Dem Civil Liberties v14</span>
+    <span style="background: rgba(59, 130, 246, 0.15); border: 1px solid rgba(59, 130, 246, 0.4); color: #93c5fd; padding: 3px 10px; border-radius: 12px; font-size: 0.8rem; font-weight: 600;">WRI Aqueduct 4.0</span>
+    <span style="background: rgba(59, 130, 246, 0.15); border: 1px solid rgba(59, 130, 246, 0.4); color: #93c5fd; padding: 3px 10px; border-radius: 12px; font-size: 0.8rem; font-weight: 600;">TeleGeography Subsea Mesh</span>
+</div>
+<p style="font-size: 1.05rem; color: #94a9c9; max-width: 1000px; line-height: 1.55; margin-bottom: 22px;">
+An empirical tri-pillar intelligence model mapping the physical concentration of transoceanic cables and hyperscale data centers against institutional civil liberties vulnerability and municipal evaporative cooling stress.
 </p>
 """,
     unsafe_allow_html=True,
 )
 
-# ----------------- TABS SETUP -----------------
-tab_explorer, tab_researchers, tab_theory, tab_pipeline = st.tabs(
+tab_explorer, tab_heatmap, tab_researchers, tab_theory, tab_pipeline = st.tabs(
     [
         "📊 Interactive Risk Explorer",
+        "🔥 Global Risk Heatmap",
         "🔬 Researcher & Policy Applications",
         "🏛️ Theoretical Framework",
         "⚙️ Pipeline Architecture",
@@ -169,36 +217,48 @@ tab_explorer, tab_researchers, tab_theory, tab_pipeline = st.tabs(
 )
 
 # =========================================================================
-# TAB 1: INTERACTIVE EXPLORER
+# TAB 1: INTERACTIVE EXPLORER (REFINED LAYOUT)
 # =========================================================================
 with tab_explorer:
-    st.sidebar.markdown(
-        "<h3 style='color: #f5f0e1; font-family: Cambria, Georgia;'>Index Controls</h3>",
-        unsafe_allow_html=True,
+    cluster_col = (
+        "empirical_typology"
+        if "empirical_typology" in df_index.columns
+        else "risk_quadrant"
     )
+    clusters = ["All"] + sorted(df_index[cluster_col].unique().tolist())
 
-    quadrants = ["All"] + sorted(df_index["risk_quadrant"].unique().tolist())
-    selected_quadrant = st.sidebar.selectbox("Risk Quadrant:", quadrants)
-
-    min_risk, max_risk = st.sidebar.slider(
-        "V-Dem Governance Risk Threshold:",
-        min_value=0.0,
-        max_value=100.0,
-        value=(0.0, 100.0),
-    )
+    # Top Control Filter Bar
+    st.markdown('<div class="filter-panel">', unsafe_allow_html=True)
+    f1, f2, f3 = st.columns([1.2, 1.4, 1.4])
+    with f1:
+        selected_cluster = st.selectbox("Empirical Typology Cluster:", clusters)
+    with f2:
+        min_gov, max_gov = st.slider(
+            "Pillar 2: V-Dem Governance Risk:",
+            min_value=0.0,
+            max_value=100.0,
+            value=(0.0, 100.0),
+        )
+    with f3:
+        min_env, max_env = st.slider(
+            "Pillar 3: WRI Water Stress Index:",
+            min_value=0.0,
+            max_value=100.0,
+            value=(0.0, 100.0),
+        )
+    st.markdown("</div>", unsafe_allow_html=True)
 
     # Filter logic
     filtered_df = df_index[
-        (df_index["governance_risk_score"] >= min_risk)
-        & (df_index["governance_risk_score"] <= max_risk)
+        (df_index["governance_risk_score"] >= min_gov)
+        & (df_index["governance_risk_score"] <= max_gov)
+        & (df_index["environmental_stress_score"] >= min_env)
+        & (df_index["environmental_stress_score"] <= max_env)
     ]
-    if selected_quadrant != "All":
-        filtered_df = filtered_df[
-            filtered_df["risk_quadrant"] == selected_quadrant
-        ]
+    if selected_cluster != "All":
+        filtered_df = filtered_df[filtered_df[cluster_col] == selected_cluster]
 
-    st.write("")
-    # Metric summary row
+    # Metric Row
     c1, c2, c3, c4 = st.columns(4)
     with c1:
         st.markdown(
@@ -212,7 +272,7 @@ with tab_explorer:
         )
     with c3:
         st.markdown(
-            f'<div class="metric-card"><div class="metric-value">{int(filtered_df["datacenter_count"].sum()):,}</div><div class="metric-label">Enterprise Facilities</div></div>',
+            f'<div class="metric-card"><div class="metric-value">{int(filtered_df["datacenter_count"].sum()):,}</div><div class="metric-label">Data Center Facilities</div></div>',
             unsafe_allow_html=True,
         )
     with c4:
@@ -222,15 +282,15 @@ with tab_explorer:
             else 0.0
         )
         st.markdown(
-            f'<div class="metric-card"><div class="metric-value">{avg_exp:.2f}</div><div class="metric-label">Mean Exposure Index</div></div>',
+            f'<div class="metric-card"><div class="metric-value">{avg_exp:.2f}</div><div class="metric-label">Mean Tri-Pillar Exposure</div></div>',
             unsafe_allow_html=True,
         )
 
     st.write("")
     st.write("")
 
-    # Map & Table Layout
-    col_map, col_table = st.columns([3, 2])
+    # Map & Priority Rankings Split Layout
+    col_map, col_table = st.columns([1.6, 1.4])
 
     with col_map:
         st.markdown("### 🗺️ Physical Landing Station Clusters")
@@ -243,12 +303,27 @@ with tab_explorer:
             tiles="OpenStreetMap",
             control_scale=True,
         )
-
         if not cables_subset.empty:
             locations = cables_subset[["latitude", "longitude"]].values.tolist()
             FastMarkerCluster(data=locations).add_to(m)
 
-        st_folium(m, width=680, height=480, returned_objects=[])
+        raw_map_html = m._repr_html_()
+        dark_tile_style = """
+        <style>
+            .leaflet-tile {
+                filter: brightness(0.6) invert(1) contrast(3) hue-rotate(200deg) saturate(0.3) !important;
+            }
+            .leaflet-container {
+                background: #080d17 !important;
+            }
+        </style>
+        """
+        if "<head>" in raw_map_html:
+            map_html = raw_map_html.replace("<head>", f"<head>{dark_tile_style}")
+        else:
+            map_html = dark_tile_style + raw_map_html
+
+        components.html(map_html, width=640, height=480)
 
     with col_table:
         st.markdown("### 📋 Exposure Priority Rankings")
@@ -257,47 +332,206 @@ with tab_explorer:
             "composite_exposure_score",
             "physical_density_score",
             "governance_risk_score",
+            "environmental_stress_score",
         ]
-        st.dataframe(
-            filtered_df[display_cols].reset_index(drop=True),
-            width="stretch",
-            height=480,
+        formatted_table = (
+            filtered_df[display_cols]
+            .sort_values(by="composite_exposure_score", ascending=False)
+            .reset_index(drop=True)
+            .rename(
+                columns={
+                    "country": "Jurisdiction",
+                    "composite_exposure_score": "Composite Exposure",
+                    "physical_density_score": "Density",
+                    "governance_risk_score": "Gov Risk",
+                    "environmental_stress_score": "Water Stress",
+                }
+            )
         )
 
-    # Sovereign Dossier Drilldown
+        table_html = formatted_table.to_html(index=False, classes="rankings-table")
+        st.markdown(
+            f"""
+            <div style="max-height: 480px; overflow-y: auto; border: 1px solid rgba(190, 206, 230, 0.2); border-radius: 6px; padding: 4px; background-color: #0e1726;">
+                <style>
+                    .rankings-table {{ width: 100%; border-collapse: collapse; font-family: 'Cambria', 'Georgia', serif; font-size: 0.92rem; }}
+                    .rankings-table th {{ background-color: #16253d; color: #f0f4f8; padding: 10px 8px; text-align: left; position: sticky; top: 0; border-bottom: 2px solid rgba(190, 206, 230, 0.3); z-index: 1; }}
+                    .rankings-table td {{ padding: 8px; border-bottom: 1px solid rgba(190, 206, 230, 0.08); color: #d1dced; }}
+                    .rankings-table tr:hover {{ background-color: rgba(59, 130, 246, 0.08); }}
+                </style>
+                {table_html}
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+
+    # Sovereign Deep-Dive Dossier Section
     st.markdown("---")
-    st.subheader("🔍 Sovereign Infrastructure Dossier")
+    st.subheader("🔍 Sovereign Tri-Pillar Dossier")
     sel_country = st.selectbox(
         "Select Jurisdiction for Deep-Dive Profile:",
         options=df_index["country"].sort_values(),
     )
     rec = df_index[df_index["country"] == sel_country].iloc[0]
 
-    d1, d2, d3, d4 = st.columns(4)
-    d1.info(f"**Classification:**\n{rec['risk_quadrant']}")
+    d1, d2, d3, d4, d5 = st.columns(5)
+    d1.info(f"**Empirical Cluster:**\n{rec[cluster_col]}")
     d2.metric("Cable Landings", f"{int(rec['cable_landing_count'])}")
     d3.metric("Data Centers", f"{int(rec['datacenter_count'])}")
-    d4.metric("Exposure Metric", f"{rec['composite_exposure_score']}")
+    d4.metric("Gov Risk (V-Dem)", f"{rec['governance_risk_score']}")
+    d5.metric("Water Stress (WRI)", f"{rec['environmental_stress_score']}")
 
-    # Export control in sidebar
-    st.sidebar.markdown("---")
-    st.sidebar.download_button(
+    case_studies = {
+        "Egypt": """
+        **Strategic Profile: The Sovereign Transcontinental Bottleneck**  
+        Egypt constitutes the single most concentrated maritime data chokepoint on Earth, handling over 15% of all transcontinental internet traffic between Europe and Asia across the Suez transit corridor. State-owned **Telecom Egypt** maintains a statutory monopoly over terrestrial crossing rights, imposing steep transit tariffs and compulsory landing oversight. Combined with severe municipal water deficits (WRI 77.0) along the Nile Delta, the concentration of landing facilities in Alexandria and Port Said poses profound dual-risk exposure to physical interdiction and authoritarian telemetry interception.
+        """,
+        "Singapore": """
+        **Strategic Profile: The Ecological Ceiling on Island Compute**  
+        Singapore functions as Southeast Asia’s undisputed digital switching capital, anchoring dozens of major trans-Pacific and intra-Asian subsea cables. However, hyperscale compute expansion faces an acute ecological bottleneck: extreme water import vulnerability (WRI 76.0) and stringent domestic energy constraints prompted the government's multi-year data center moratorium. Singapore illustrates how geographic and hydrological limits force advanced regulatory standards for cooling efficiency and sustainable compute allocation.
+        """,
+        "Germany": """
+        **Strategic Profile: The Institutional Buffer of DE-CIX Frankfurt**  
+        Anchored by the world-leading DE-CIX Internet Exchange in Frankfurt, Germany represents a dense compute nexus (Physical Density 54.2) insulated by high institutional durability. Under the V-Dem civil liberties framework, judicial independence and statutory data protection (GDPR) act as an institutional buffer against arbitrary executive interdiction, while temperate hydrology keeps cooling-related water stress low (32.0).
+        """,
+        "China": """
+        **Strategic Profile: Monolithic Infrastructure Density Under Total Surveillance**  
+        China combines immense domestic hyperscale capacity and trans-Pacific landings with comprehensive state oversight. Under the Cybersecurity Law and Data Security Law, the boundary between private cloud tenants and state intelligence agencies is legally porous. Despite substantial hydroelectric resources in the south, major compute clusters in northern and western provinces face significant hydrological strain, exacerbating its status as the highest aggregate exposure jurisdiction globally.
+        """,
+        "United States": """
+        **Strategic Profile: Massive Physical Aggregation vs. Localized Aridification**  
+        The United States remains the structural core of global AI training clusters (Physical Density 88.9). While federal judicial review and property rights provide robust institutional insulation, extreme compute concentration in hydrological stress corridors (e.g., Northern Virginia's watershed demands, Arizona, and Utah) creates acute municipal friction between cooling requirements and local residential aquifers.
+        """,
+    }
+
+    if sel_country in case_studies:
+        clean_text = textwrap.dedent(case_studies[sel_country]).strip()
+        st.markdown(
+            f"""
+            <div style="background-color: #132035; border: 1px solid rgba(190, 206, 230, 0.2); border-left: 4px solid #3b82f6; border-radius: 4px; padding: 18px 22px; margin-top: 16px; font-size: 0.95rem; line-height: 1.6; color: #d1dced;">
+                {clean_text}
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+
+    st.write("")
+    st.download_button(
         label="📥 Download Active Subset (CSV)",
         data=filtered_df.to_csv(index=False).encode("utf-8"),
-        file_name="ai_infrastructure_risk_filtered.csv",
+        file_name="tri_pillar_ai_infrastructure_risk.csv",
         mime="text/csv",
     )
 
 # =========================================================================
-# TAB 2: RESEARCHER & POLICY APPLICATIONS
+# TAB 2: GLOBAL RISK HEATMAP
 # =========================================================================
-with tab_researchers:
-    st.markdown("## 🔬 What Researchers & Analysts Can Seek in This Index")
+with tab_heatmap:
+    st.markdown("## 🔥 Global Infrastructure & Risk Heatmap")
     st.markdown(
         """
-    <p style="font-size: 1.05rem; color: #dfd7c2; line-height: 1.6;">
-    This index bridges the structural gap between <strong>spatial infrastructure mapping</strong> and <strong>comparative political economy</strong>. 
-    Rather than treating compute infrastructure as a purely commercial commodity, researchers can leverage this framework across four distinct empirical inquiry areas:
+        <p style="font-size: 1.05rem; color: #d1dced; margin-bottom: 20px;">
+        Visualize global concentration zones as a dynamic thermal intensity map. Select a tri-pillar metric to weight infrastructure coordinates by sovereign risk severity.
+        </p>
+        """,
+        unsafe_allow_html=True,
+    )
+
+    h_col1, h_col2, h_col3 = st.columns([2, 1, 1])
+
+    with h_col1:
+        metric_choice = st.selectbox(
+            "Select Heatmap Weighting Dimension:",
+            options=[
+                "composite_exposure_score",
+                "governance_risk_score",
+                "environmental_stress_score",
+                "physical_density_score",
+            ],
+            format_func=lambda x: {
+                "composite_exposure_score": "Composite Exposure Score (Tri-Pillar)",
+                "governance_risk_score": "Pillar 2: V-Dem Governance Fragility",
+                "environmental_stress_score": "Pillar 3: WRI Water Cooling Stress",
+                "physical_density_score": "Pillar 1: Physical Infrastructure Density",
+            }[x],
+        )
+
+    with h_col2:
+        blur_val = st.slider(
+            "Heatmap Dispersion (Blur):", min_value=10, max_value=35, value=18
+        )
+
+    with h_col3:
+        radius_val = st.slider("Point Radius:", min_value=8, max_value=30, value=15)
+
+    heatmap_df = df_cables.merge(
+        df_index[["country", metric_choice]], on="country", how="inner"
+    ).dropna(subset=["latitude", "longitude", metric_choice])
+
+    if not heatmap_df.empty:
+        max_val = heatmap_df[metric_choice].max()
+        min_val = heatmap_df[metric_choice].min()
+        spread = (max_val - min_val) if max_val != min_val else 1.0
+
+        heatmap_df["weight"] = 0.15 + 0.85 * (
+            (heatmap_df[metric_choice] - min_val) / spread
+        )
+
+        heat_data = heatmap_df[["latitude", "longitude", "weight"]].values.tolist()
+
+        m_heat = folium.Map(
+            location=[20, 0],
+            zoom_start=2,
+            tiles="OpenStreetMap",
+            control_scale=True,
+        )
+
+        gradient_palette = {
+            0.2: "#38bdf8",
+            0.4: "#22c55e",
+            0.7: "#eab308",
+            1.0: "#ef4444",
+        }
+
+        HeatMap(
+            heat_data,
+            radius=radius_val,
+            blur=blur_val,
+            max_zoom=6,
+            gradient=gradient_palette,
+            min_opacity=0.35,
+        ).add_to(m_heat)
+
+        raw_heat_html = m_heat._repr_html_()
+        dark_tile_style = """
+        <style>
+            .leaflet-tile {
+                filter: brightness(0.6) invert(1) contrast(3) hue-rotate(200deg) saturate(0.3) !important;
+            }
+            .leaflet-container {
+                background: #080d17 !important;
+            }
+        </style>
+        """
+        if "<head>" in raw_heat_html:
+            heat_html = raw_heat_html.replace("<head>", f"<head>{dark_tile_style}")
+        else:
+            heat_html = dark_tile_style + raw_heat_html
+
+        components.html(heat_html, width=1080, height=540)
+    else:
+        st.warning("Insufficient geospatial data points available for this selection.")
+
+# =========================================================================
+# TAB 3: RESEARCHER & POLICY APPLICATIONS
+# =========================================================================
+with tab_researchers:
+    st.markdown("## 🔬 Empirical Applications for Scholars & Policy Teams")
+    st.markdown(
+        """
+    <p style="font-size: 1.05rem; color: #d1dced; line-height: 1.6;">
+    By linking geospatial infrastructure datasets with institutional governance and municipal resource fragility, 
+    the index enables research across four interdisciplinary domains:
     </p>
     """,
         unsafe_allow_html=True,
@@ -308,11 +542,11 @@ with tab_researchers:
         st.markdown(
             """
         <div class="research-card">
-            <h4>1. Empirical Stress-Testing of AI Supply Chains</h4>
-            <p style="color: #dfd7c2; font-size: 0.95rem; line-height: 1.5;">
-            Investigate how national frontier model providers (e.g., frontier labs, cloud hyperscalers) route cross-border telemetry. Analysts can test hypotheses on whether network traffic actively avoids or disproportionately transits illiberal transit corridors (e.g., the Suez/Red Sea bottleneck or Straits of Malacca).
+            <h4>1. Compute-Sovereignty Decoupling & Supply Chain Shocks</h4>
+            <p style="color: #d1dced; font-size: 0.95rem; line-height: 1.55;">
+            Evaluate how frontier AI developers and national cloud programs face regulatory or physical interdiction in high-risk transit hubs. Quantifies exposure in jurisdictions that combine concentrated transit assets with low rule-of-law protections.
             </p>
-            <p style="color: #eedcb3; font-size: 0.88rem; font-weight: 600;">Key Query: Which physical corridors present single points of failure under state-sponsored disruption?</p>
+            <p style="color: #60a5fa; font-size: 0.88rem; font-weight: 600; margin-top: 10px;">Key Research Question: How do institutional preemption risks alter global routing topologies?</p>
         </div>
         """,
             unsafe_allow_html=True,
@@ -323,11 +557,11 @@ with tab_researchers:
         st.markdown(
             """
         <div class="research-card">
-            <h4>2. Authoritarian Leverage & Data Sovereignty Mandates</h4>
-            <p style="color: #dfd7c2; font-size: 0.95rem; line-height: 1.5;">
-            Comparative politics researchers can isolate jurisdictions with high compute density but rapid democratic backsliding. Use this index to examine how non-democratic states leverage physical infrastructure hosting to impose local data localization laws, warrantless lawful interception, and telemetry capture.
+            <h4>2. Ecological Constraints on Hyperscale Expansion</h4>
+            <p style="color: #d1dced; font-size: 0.95rem; line-height: 1.55;">
+            Cross-references data center concentration against WRI baseline water stress. Highlights jurisdictions where explosive growth in AI training and inference facilities conflicts directly with local municipal water tables and agricultural baselines.
             </p>
-            <p style="color: #eedcb3; font-size: 0.88rem; font-weight: 600;">Key Query: Does asset hosting correlate with coercive extraterritorial surveillance capacity?</p>
+            <p style="color: #60a5fa; font-size: 0.88rem; font-weight: 600; margin-top: 10px;">Key Research Question: Where does the physical cooling footprint of compute create localized resource conflict?</p>
         </div>
         """,
             unsafe_allow_html=True,
@@ -337,11 +571,11 @@ with tab_researchers:
         st.markdown(
             """
         <div class="research-card">
-            <h4>3. Geopolitical Alignment & Compute Decoupling</h4>
-            <p style="color: #dfd7c2; font-size: 0.95rem; line-height: 1.5;">
-            International relations and trade policy scholars can model the impact of export controls (such as advanced GPU restrictions and semiconductor sanctions). By cross-referencing quadrant classifications with alliance treaties (e.g., NATO, Quad, BRICS+), researchers can track infrastructural decoupling or "splinternet" fragmentation.
+            <h4>3. Authoritarian Telemetry Interception & Data Localization</h4>
+            <p style="color: #d1dced; font-size: 0.95rem; line-height: 1.55;">
+            Isolates states where high physical transit density intersects with aggressive civil liberties restrictions. Provides empirical foundation for tracking state-compelled telemetry collection, lawful intercept backdoors, and statutory localization mandates.
             </p>
-            <p style="color: #eedcb3; font-size: 0.88rem; font-weight: 600;">Key Query: Are non-aligned states emerging as neutral digital conduits or contested chokepoints?</p>
+            <p style="color: #60a5fa; font-size: 0.88rem; font-weight: 600; margin-top: 10px;">Key Research Question: Does physical infrastructure capture enable extraterritorial data surveillance?</p>
         </div>
         """,
             unsafe_allow_html=True,
@@ -352,27 +586,26 @@ with tab_researchers:
         st.markdown(
             """
         <div class="research-card">
-            <h4>4. Human Rights Risk Audits for Enterprise AI Deployment</h4>
-            <p style="color: #dfd7c2; font-size: 0.95rem; line-height: 1.5;">
-            Corporate governance, ESG auditors, and compliance teams can utilize the Composite Exposure Metric to conduct formal human rights impact assessments (HRIAs). It reveals latent operational risks where compute dependencies inadvertently subject sensitive customer data to unconstrained judicial seizure.
+            <h4>4. Enterprise AI Risk Audits & Compliance</h4>
+            <p style="color: #d1dced; font-size: 0.95rem; line-height: 1.55;">
+            Enables enterprise compliance officers, cloud architects, and risk analysts to stress-test their physical compute footprints. The composite exposure metric flags hidden dependencies on single-point-of-failure coastal stations and authoritarian legal environments.
             </p>
-            <p style="color: #eedcb3; font-size: 0.88rem; font-weight: 600;">Key Query: Where does an enterprise's physical compute footprint conflict with statutory civil liberties mandates?</p>
+            <p style="color: #60a5fa; font-size: 0.88rem; font-weight: 600; margin-top: 10px;">Key Research Question: Where are corporate compute dependencies vulnerable to regulatory or physical seizure?</p>
         </div>
         """,
             unsafe_allow_html=True,
         )
 
 # =========================================================================
-# TAB 3: THEORETICAL THESIS
+# TAB 4: THEORETICAL FRAMEWORK
 # =========================================================================
 with tab_theory:
     st.markdown("## 🏛️ Theoretical Thesis: The Materiality of AI")
-
     st.markdown(
         """
     <div class="theory-box">
-        <p style="font-size: 1.15rem; font-style: italic; color: #f5f0e1; margin: 0; line-height: 1.6;">
-        "Artificial Intelligence is routinely conceptualized as ethereal compute residing in an abstract, borderless 'cloud.' In physical reality, its foundational architecture is rigidly territorial, geographically vulnerable, and anchored within sovereign jurisdictions possessing highly divergent institutional commitments to civil liberties and the rule of law."
+        <p style="font-size: 1.15rem; font-style: italic; color: #f0f4f8; margin: 0; line-height: 1.6;">
+        "Artificial Intelligence is not an abstract cloud; it is an extractive physical industry. Its frontier capabilities require gigawatt-scale power grids, millions of gallons of evaporative cooling water, and thousands of miles of seabed fiber-optic conduits anchored in physical sovereign territory."
         </p>
     </div>
     """,
@@ -383,62 +616,26 @@ with tab_theory:
     with t1:
         st.markdown(
             """
-        ### 1. The Chokepoint Dilemma in Digital Sovereign Transit
-        Commercial artificial intelligence models and high-frequency data pipelines rely on fewer than 600 subsea cable systems carrying over 95% of intercontinental traffic. While cloud providers advertise borderless resilience, physical landing stations must anchor in specific coastal geographies.
-        
-        This index reveals that key global transit routes pass through **high-governance-risk jurisdictions**:
-        * **The Suez Canal / Red Sea Corridor (Egypt)**: Represents one of the world's most concentrated digital single points of failure. Nearly all Europe-to-Asia data transit funnels through Egyptian territorial waters and overland corridors controlled by state-managed monopolies.
-        * **The Strait of Malacca / South China Sea Corridors**: Highly concentrated landing stations in maritime Southeast Asia create systemic exposure to regional territorial disputes and unconstrained surveillance regimes.
+        ### 1. Physical Vulnerability vs. The Cloud Myth
+        While modern cloud marketing suggests compute is distributed and frictionless, the physical reality is concentrated. Transoceanic data transit relies on fewer than 600 subsea cable systems. These conduits land at concentrated, vulnerable coastal chokepoints—such as the Suez Canal, Egypt, the Strait of Malacca, and the English Channel.
         """
         )
-
     with t2:
         st.markdown(
             """
-        ### 2. Institutional Buffers vs. Coercive Jurisdiction
-        Data governance is not purely a legal compliance problem; it is a question of **coercive state capacity**:
-        * In **Resilient Hubs** (e.g., Germany, United Kingdom, Canada), institutional checks, administrative proceduralism, and independent courts provide legal predictability against arbitrary seizure, warrantless data interception, and nationalization.
-        * In **Critical Chokepoints** (e.g., China, Russia, Saudi Arabia, UAE), immense capital investment in compute infrastructure coexists with state-centric legal architectures. Without autonomous judicial review, physical compute assets remain perpetually exposed to sovereign preemption, state-compelled telemetry access, and sudden regulatory decoupling.
-        """
-        )
-
-    st.markdown("---")
-    st.markdown("### The Four-Quadrant Strategic Typology")
-
-    q_col1, q_col2 = st.columns(2)
-    with q_col1:
-        st.markdown(
-            """
-        **1. Critical Chokepoints (High Assets / High Risk)**
-        * *Examples*: China, Russia, Saudi Arabia, India, Egypt.
-        * *Strategic Reality*: Indispensable for regional routing or local inference, but carry acute exposure to state surveillance mandates, national security preemption, and export controls.
-        
-        **2. Resilient Hubs (High Assets / Low Risk)**
-        * *Examples*: United States, United Kingdom, Canada, Japan, Germany.
-        * *Strategic Reality*: The foundational backbone of the liberal international digital order. Characterized by deep capital markets, legal predictability, and high physical protection.
-        """
-        )
-    with q_col2:
-        st.markdown(
-            """
-        **3. Emerging Frontiers (Low Assets / High Risk)**
-        * *Examples*: Central Asia, parts of Sub-Saharan Africa.
-        * *Strategic Reality*: Digital peripheries vulnerable to predatory digital infrastructure financing ("digital silk road" initiatives) where physical compute has yet to scale.
-        
-        **4. Stable Periphery (Low Assets / Low Risk)**
-        * *Examples*: New Zealand, Nordic states, Uruguay.
-        * *Strategic Reality*: High institutional integrity and human rights protections, but constrained by geography or latency from serving as high-volume intercontinental transit cores.
+        ### 2. Institutional Vulnerability & Coercive State Capacity
+        When physical infrastructure is hosted in illiberal jurisdictions, legal protections against arbitrary state intervention disappear. Without independent judicial review, governments can enforce lawful intercept orders, demand model weights or training telemetry, or physically sever cables during geopolitical crises.
         """
         )
 
 # =========================================================================
-# TAB 4: DATA ARCHITECTURE
+# TAB 5: DATA ARCHITECTURE
 # =========================================================================
 with tab_pipeline:
-    st.markdown("## ⚙️ Data Engineering & Pipeline Architecture")
+    st.markdown("## ⚙️ Tri-Pillar Pipeline & Mathematical Formulation")
     st.markdown(
         """
-    The index executes a reproducible, four-phase computational pipeline converting heterogenous geospatial endpoints and multi-decade democracy indicators into a consolidated analytic index.
+    The index processes multi-source geospatial, institutional, and environmental data through a reproducible four-stage architecture:
     """
     )
 
@@ -446,61 +643,24 @@ with tab_pipeline:
     with p1:
         st.markdown(
             """
-        #### Phase 1: Physical Asset Ingestion
-        * **Subsea Fiber Arteries**: Extracted 1,928 active landing coordinates from TeleGeography's global infrastructure database. String parsing algorithms isolated sovereign territory from station identifiers.
-        * **Hyperscale Compute Density**: Ingested 18,000+ colocation and enterprise data center coordinates via the global ATLAS geospatial dataset.
-        
-        #### Phase 2: Log-Transformed Normalization
-        Physical assets follow a power-law distribution (Northern Virginia, Frankfurt, Singapore, and London hold disproportionate compute capacity). A linear index would collapse non-Western hubs to zero:
+        #### 1. Physical Density Index ($P_i$)
         $$P_i = 12.5 \\times \\left[0.5 \\ln(1 + C_i) + 0.5 \\ln(1 + D_i)\\right]$$
-        *Where $C_i$ = Cable landings, $D_i$ = Data center facilities. Yields a balanced 0–100 scale.*
+        *Logarithmic transformation normalizes cable landings ($C_i$) and data centers ($D_i$), preventing extreme Western and East Asian clusters from skewing the global baseline.*
+        
+        #### 2. Institutional Governance Fragility ($G_i$)
+        $$G_i = (1 - \\text{V-Dem}_{\\text{civlib}}) \\times 100$$
+        *Inverts the V-Dem Civil Liberties Index (`v2x_civlib`), so higher values denote autocracy, lack of judicial independence, and state surveillance power.*
         """
         )
-
     with p2:
         st.markdown(
             """
-        #### Phase 3: Institutional Governance Scoring
-        * Ingested the **Varieties of Democracy (V-Dem) Civil Liberties Index (`v2x_civlib`)**, measuring physical integrity rights, freedom of domestic movement, and judicial independence.
-        * Inverted V-Dem's 0–1 scale to calculate sovereign governance risk:
-        $$G_i = (1 - \\text{V-Dem}_{\\text{civlib}}) \\times 100$$
+        #### 3. Environmental Cooling Stress ($E_i$)
+        $$E_i = \\left(\\frac{\\text{WRI Water Stress Score}}{5.0}\\right) \\times 100$$
+        *Normalizes national baseline water stress from the World Resources Institute Aqueduct Atlas (0 = Low Stress, 100 = Extremely High Stress).*
         
-        #### Phase 4: Exposure Synthesis & Quadrant Classification
-        Composite exposure reflects physical concentration weighted by institutional vulnerability:
-        $$\\text{Exposure}_i = P_i \\times \\left(\\frac{G_i}{100}\\right)$$
-        Jurisdictions are segmented using empirical median splits into four strategic operating profiles.
+        #### 4. Tri-Pillar Composite Exposure
+        $$\\text{Exposure}_i = P_i \\times \\left(0.6 \\cdot \\frac{G_i}{100} + 0.4 \\cdot \\frac{E_i}{100}\\right)$$
+        *Weights institutional vulnerability and environmental stress against physical asset concentration.*
         """
         )
-
-    st.markdown("---")
-    st.markdown("#### Summary Data Dictionary")
-    dict_df = pd.DataFrame(
-        [
-            {
-                "Field": "cable_landing_count",
-                "Source": "TeleGeography Submarine Cable Map",
-                "Description": "Total active transoceanic fiber-optic cable landing points in sovereign territory.",
-            },
-            {
-                "Field": "datacenter_count",
-                "Source": "ATLAS Global Data Center Map",
-                "Description": "Total enterprise and hyperscale facilities operating within the jurisdiction.",
-            },
-            {
-                "Field": "physical_density_score",
-                "Source": "Engineered (Pillar 1)",
-                "Description": "Log-normalized composite asset score (0 = negligible, 100 = maximum global density).",
-            },
-            {
-                "Field": "governance_risk_score",
-                "Source": "V-Dem Institute (`v2x_civlib`)",
-                "Description": "Inverted civil liberties index (0 = robust institutional rule of law, 100 = acute autocracy).",
-            },
-            {
-                "Field": "composite_exposure_score",
-                "Source": "Engineered Metric",
-                "Description": "Total systemic supply-chain exposure metric ($P_i \\times G_i / 100$).",
-            },
-        ]
-    )
-    st.table(dict_df)
